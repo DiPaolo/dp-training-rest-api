@@ -4,7 +4,7 @@ import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from pydantic import BaseModel, Field
 
 from web_server import repository, domain
@@ -15,16 +15,19 @@ app = FastAPI(separate_input_output_schemas=True)
 class TodoItemIn(BaseModel):
     title: str = Field(min_length=1)
     desc: str | None = None
+    priority: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime.datetime | None = Field(alias='createdAt', default=None)
     due_to: datetime.datetime | None = Field(alias='dueTo', default=None)
 
     def to_domain(self) -> domain.TodoItem:
-        return domain.TodoItem(title=self.title, desc=self.desc, created_at=self.created_at, due_to=self.due_to)
+        return domain.TodoItem(title=self.title, priority=self.priority, desc=self.desc, created_at=self.created_at,
+                               due_to=self.due_to)
 
 
 class TodoItemInUpdate(BaseModel):
     title: str | None = Field(min_length=1)
     desc: str | None = None
+    priority: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime.datetime | None = Field(alias='createdAt', default=None)
     due_to: datetime.datetime | None = Field(alias='dueTo', default=None)
 
@@ -36,12 +39,13 @@ class TodoItemOut(BaseModel):
     id: UUID
     title: str
     desc: str | None = None
+    priority: int | None = Field(default=None, ge=1, le=5)
     created_at: datetime.datetime | None = Field(alias='createdAt', default=None)
     due_to: datetime.datetime | None = Field(alias='dueTo', default=None)
 
     @staticmethod
     def from_domain(item: domain.TodoItem) -> TodoItemOut:
-        out = TodoItemOut(id=item.id, title=item.title, desc=item.desc)
+        out = TodoItemOut(id=item.id, title=item.title, priority=item.priority, desc=item.desc)
 
         out.created_at = item.created_at
         out.due_to = item.due_to
@@ -64,7 +68,7 @@ def get_todo_item(item_id: UUID) -> Optional[TodoItemOut]:
     return TodoItemOut.from_domain(item)
 
 
-@app.post("/api/todos")
+@app.post("/api/todos", status_code=status.HTTP_201_CREATED)
 def add_todo_item(item: TodoItemIn) -> Optional[TodoItemOut]:
     if item.created_at is None:
         item.created_at = datetime.datetime.utcnow()
