@@ -32,6 +32,29 @@ def get_item_by_id(item_id: UUID) -> Optional[domain.TodoItem]:
         return None
 
 
+def update_todo_item(item_id: UUID, item_in: domain.TodoItem) -> Optional[domain.TodoItem]:
+    if not item_id:
+        return None
+
+    data = get_repo()
+    try:
+        for item in data:
+            if item['id'] == item_id:
+                for k, v in item_in.to_dict().items():
+                    if k.lower() == 'id':
+                        continue
+
+                    if v is not None:
+                        item[k] = v
+
+                update_repo(data)
+                return domain.TodoItem.from_dict(item)
+    except:
+        return None
+
+    return None
+
+
 def delete_item(item_id: UUID) -> Optional[domain.TodoItem]:
     if not item_id:
         return None
@@ -47,6 +70,7 @@ def delete_item(item_id: UUID) -> Optional[domain.TodoItem]:
         return None
 
     return None
+
 
 def get_repo(remove_from_cache: bool = False) -> Optional[List[Dict]]:
     data = _read_cache()
