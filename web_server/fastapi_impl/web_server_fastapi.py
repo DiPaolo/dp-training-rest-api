@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -44,6 +45,15 @@ def get_todo_items() -> list[TodoItemOut]:
     return [TodoItemOut.from_domain(i) for i in items]
 
 
+@app.get("/api/todos/{item_id}")
+def get_todo_item(item_id: UUID) -> Optional[TodoItemOut]:
+    item = repository.get_item_by_id(item_id)
+    if item is None:
+        return None
+
+    return TodoItemOut.from_domain(item)
+
+
 @app.post("/api/todos")
 def add_todo_item(item: TodoItemIn) -> TodoItemOut:
     if item.created_at is None:
@@ -52,3 +62,12 @@ def add_todo_item(item: TodoItemIn) -> TodoItemOut:
     out_domain_item = repository.add_todo_item(item.to_domain())
     fff = TodoItemOut.from_domain(out_domain_item)
     return fff
+
+
+@app.delete("/api/todos/{item_id}")
+def delete_todo_item(item_id: UUID) -> Optional[TodoItemOut]:
+    item = repository.delete_item(item_id)
+    if item is None:
+        return None
+
+    return TodoItemOut.from_domain(item)

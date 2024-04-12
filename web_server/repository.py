@@ -2,6 +2,7 @@ import logging
 import os
 import pickle
 from typing import Optional, Dict, List
+from uuid import UUID
 
 from web_server import domain
 
@@ -18,6 +19,34 @@ def add_todo_item(item: domain.TodoItem) -> domain.TodoItem:
 def get_todo_items() -> List[domain.TodoItem]:
     return [domain.TodoItem.from_dict(i) for i in get_repo()]
 
+
+def get_item_by_id(item_id: UUID) -> Optional[domain.TodoItem]:
+    if not item_id:
+        return None
+
+    data = get_repo()
+    try:
+        found_item = next(filter(lambda i: i['id'] == item_id, data))
+        return domain.TodoItem.from_dict(found_item)
+    except:
+        return None
+
+
+def delete_item(item_id: UUID) -> Optional[domain.TodoItem]:
+    if not item_id:
+        return None
+
+    data = get_repo()
+    try:
+        for item in data:
+            if item['id'] == item_id:
+                data.remove(item)
+                update_repo(data)
+                return domain.TodoItem.from_dict(item)
+    except:
+        return None
+
+    return None
 
 def get_repo(remove_from_cache: bool = False) -> Optional[List[Dict]]:
     data = _read_cache()
